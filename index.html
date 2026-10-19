@@ -167,6 +167,13 @@
   table.admin td.actions{white-space:nowrap;}
   table.admin td.actions .btn{margin:0 4px 4px 0;}
   .owing{color:var(--warn);} .paid{color:var(--ok);}
+  table.admin input[type=checkbox]{width:17px; height:17px; min-width:0; accent-color:var(--gold); cursor:pointer;}
+  table.admin input[type=checkbox]:disabled{opacity:0.25; cursor:default;}
+  .bulk-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--gold); color:var(--ink);
+    border-radius:6px; padding:8px 12px; margin-bottom:10px; font-family:'Space Mono',monospace; font-size:12px; font-weight:700;}
+  .bulk-bar[hidden]{display:none;}
+  .bulk-bar .btn{background:var(--ink); color:var(--cream); border-color:var(--ink);}
+  .bulk-bar .btn.ghost{background:transparent; color:var(--ink);}
 
   .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--cream); color:var(--ink);
     font-family:'Space Mono',monospace; font-size:12px; padding:10px 16px; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,0.4);
@@ -621,6 +628,7 @@ function adminPlayersHtml(){
     const due = Number(p.AmountDue) || 0, paid = Number(p.AmountPaid) || 0;
     const search = [p.FirstName, p.LastName, p.Email, p.Phone, p.RefCode, p.Partner, p.Team].join(' ').toLowerCase();
     return `<tr data-id="${esc(p.PlayerId)}" data-status="${esc(p.Status)}" data-search="${esc(search)}">
+      <td><input type="checkbox" class="pl-pick" ${(p.Status === 'Pending' || p.Status === 'Confirmed') && paid < due ? '' : 'disabled title="Nothing owing"'}></td>
       <td>${i + 1}</td>
       <td><b>${esc(p.FirstName)} ${esc(p.LastName)}</b><div class="sub">${esc(p.Email)}</div><div class="sub">${phone(p.Phone)}</div></td>
       <td>${esc(p.Partner)}<div class="sub">${esc(p.Handicap)} · ${esc(p.Tees)} · avg ${esc(p.AvgScore)}</div><div class="sub">Dinner: ${esc(p.Dinner)} · via ${esc(p.ReferredBy)}</div></td>
@@ -642,10 +650,16 @@ function adminPlayersHtml(){
       <select id="pl-filter"><option value="">All statuses</option>${STATUSES.map(s => `<option>${s}</option>`).join('')}</select>
       <button class="btn sm" data-act="copyEmails">Copy emails</button>
     </div>
+    <div class="bulk-bar" id="bulk-bar" hidden>
+      <span id="bulk-count">0 selected</span>
+      <button class="btn sm" data-act="bulkMarkPaid">Mark paid</button>
+      <button class="btn sm ghost" data-act="bulkClear">Clear</button>
+    </div>
     <datalist id="team-list">${teams.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
     ${players.length ? `<div class="table-wrap"><table class="admin">
-      <thead><tr><th>#</th><th>Player</th><th>Partner / Golf</th><th>Code</th><th>Status</th><th>Paid</th><th>Team</th><th>Tee</th><th>Notes</th><th></th></tr></thead>
+      <thead><tr><th><input type="checkbox" id="pl-pick-all" title="Select everyone shown who still owes"></th><th>#</th><th>Player</th><th>Partner / Golf</th><th>Code</th><th>Status</th><th>Paid</th><th>Team</th><th>Tee</th><th>Notes</th><th></th></tr></thead>
       <tbody id="pl-body">${rows}</tbody></table></div>` : '<div class="empty">No sign-ups yet.</div>'}
+    <p class="body-text muted small">Tick players awaiting payment to mark several paid at once. Use the filter to show "Pending", then the top box selects them all. Players with nothing owing can't be ticked.</p>
     <p class="body-text muted small">"Give spot" moves a waitlisted player up and emails them payment instructions. Withdrawing someone frees their spot.</p>`;
 }
 function adminPaymentsHtml(){
@@ -704,6 +718,22 @@ function adminSettingsHtml(){
   </form>`;
 }
 
+function visiblePicks(){
+  return [...document.querySelectorAll('#pl-body tr')].filter(tr => tr.style.display !== 'none')
+    .map(tr => tr.querySelector('.pl-pick')).filter(cb => cb && !cb.disabled);
+}
+function pickedIds(){
+  return [...document.querySelectorAll('#pl-body .pl-pick:checked')].map(cb => cb.closest('tr').dataset.id);
+}
+function syncBulk(){
+  const ids = pickedIds(), bar = $('#bulk-bar'), all = $('#pl-pick-all');
+  if(!bar) return;
+  bar.hidden = !ids.length;
+  $('#bulk-count').textContent = `${ids.length} selected`;
+  const vis = visiblePicks();
+  all.checked = vis.length > 0 && vis.every(cb => cb.checked);
+  all.indeterminate = !all.checked && vis.some(cb => cb.checked);
+}
 function bindAdmin(){
   const search = $('#pl-search'), filter = $('#pl-filter');
   if(search){
@@ -713,7 +743,13 @@ function bindAdmin(){
         tr.style.display = (!q || tr.dataset.search.includes(q)) && (!st || tr.dataset.status === st) ? '' : 'none';
       });
     };
-    search.addEventListener('input', apply); filter.addEventListener('change', apply);
+    search.addEventListener('input', () => { apply(); syncBulk(); });
+    filter.addEventListener('change', () => { apply(); syncBulk(); });
+    $('#pl-pick-all').addEventListener('change', ev => {
+      visiblePicks().forEach(cb => cb.checked = ev.target.checked);
+      syncBulk();
+    });
+    document.querySelectorAll('#pl-body .pl-pick').forEach(cb => cb.addEventListener('change', syncBulk));
   }
   const uf = $('#update-form');
   if(uf) uf.addEventListener('submit', async ev => {
@@ -753,6 +789,19 @@ document.addEventListener('click', async ev => {
     const st = $('#pl-filter').value;
     const list = state.admin.players.filter(p => st ? p.Status === st : p.Status !== 'Withdrawn').map(p => p.Email);
     copyText(list.join(', '), `${list.length} email${list.length === 1 ? '' : 's'} copied.`); return;
+  }
+  if(act === 'bulkClear'){ document.querySelectorAll('#pl-body .pl-pick').forEach(cb => cb.checked = false); syncBulk(); return; }
+  if(act === 'bulkMarkPaid'){
+    const ids = pickedIds();
+    if(!ids.length) return;
+    const names = state.admin.players.filter(p => ids.includes(p.PlayerId)).map(p => p.FirstName + ' ' + p.LastName);
+    const list = names.slice(0, 8).join('\n') + (names.length > 8 ? `\n…and ${names.length - 8} more` : '');
+    if(!confirm(`Mark ${ids.length} player${ids.length === 1 ? '' : 's'} as fully paid?\n\n${list}\n\nThis confirms their spots and emails each of them.`)) return;
+    b.disabled = true; b.textContent = 'Saving…';
+    adminCall('adminMarkPaidBulk', { playerIds:ids }, r =>
+      `Marked ${r.updated} paid.` + (r.skipped ? ` ${r.skipped} skipped (nothing owing).` : '') +
+      (r.emailsShort ? ` Email limit reached: ${r.emailsShort} didn't get a confirmation email.` : ''));
+    return;
   }
   if(act === 'checkPayments'){
     b.disabled = true; b.textContent = 'Checking…';
@@ -877,6 +926,7 @@ function demoApi(b){
     }
     case 'adminUpdatePlayer': { sess('admin'); const p = find(b.playerId); Object.assign(p, b.changes); let emailed = false; if(p.Status === 'Pending' && +p.AmountPaid >= +p.AmountDue){ p.Status = 'Confirmed'; emailed = true; } return { emailed }; }
     case 'adminMarkPaid': { sess('admin'); const p = find(b.playerId); return { result:pay(p, Math.max(0, p.AmountDue - p.AmountPaid)) }; }
+    case 'adminMarkPaidBulk': { sess('admin'); let n = 0; b.playerIds.forEach(id => { const p = db.players.find(x => x.PlayerId === id); if(p && (p.Status === 'Pending' || p.Status === 'Confirmed') && +p.AmountPaid < +p.AmountDue){ pay(p, p.AmountDue - p.AmountPaid); n++; } }); return { updated:n, skipped:b.playerIds.length - n, emailsShort:0 }; }
     case 'adminPromote': { sess('admin'); const p = find(b.playerId); p.Status = +p.AmountPaid >= +p.AmountDue ? 'Confirmed' : 'Pending'; return { emailed:true }; }
     case 'adminPostUpdate': { sess('admin'); const n = b.emailTo === 'none' ? 0 : db.players.filter(p => b.emailTo === 'confirmed' ? p.Status === 'Confirmed' : p.Status !== 'Withdrawn').length;
       db.updates.push({ id:'u' + Date.now(), postedAt:new Date().toISOString(), title:b.title, body:b.body, category:b.category, pinned:!!b.pinned, emailedTo:n ? b.emailTo + ' (' + n + ')' : '' }); return { sent:n }; }
