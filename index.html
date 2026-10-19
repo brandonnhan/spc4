@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Special Players Championship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fairway-dark:#122A1C; --fairway:#1E4430; --fairway-light:#2B5C40;
+    --cream:#F4EFE1; --cream-dim:#E7DFC8; --line:#C9BE9E;
+    --chud:#1F5FA8; --chud-dim:#A9CBE8; --gold:#CBA135;
+    --ink:#1B1B16; --ink-soft:#4A473C; --danger:#F08A73; --ok:#7EC87E; --warn:#FFCC80;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--fairway-dark); color:var(--cream);
+    background-image:radial-gradient(circle at 20% 10%, rgba(255,255,255,0.03), transparent 40%),
+                     radial-gradient(circle at 80% 90%, rgba(255,255,255,0.03), transparent 40%);
+    font-family:'Oswald','Arial Narrow',sans-serif; min-height:100vh; padding-bottom:60px;
+  }
+  .mono{font-family:'Space Mono',monospace;}
+  header{padding:28px 16px 18px; text-align:center; border-bottom:3px solid var(--gold);
+    background:linear-gradient(180deg, var(--fairway) 0%, var(--fairway-dark) 100%);}
+  .eyebrow{font-family:'Space Mono',monospace; letter-spacing:4px; font-size:11px; font-weight:700;
+    color:var(--gold); text-transform:uppercase; margin-bottom:6px;}
+  h1{font-size:clamp(22px,5.5vw,42px); margin:0; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+    color:#fff; -webkit-text-stroke:1px var(--gold); line-height:1.1;}
+  .subhead{font-family:'Space Mono',monospace; font-size:12px; color:var(--cream-dim); margin-top:8px; letter-spacing:1px;}
+
+  .demo-banner{background:var(--gold); color:var(--ink); text-align:center; font-family:'Space Mono',monospace;
+    font-size:11px; padding:8px 12px; line-height:1.5;}
+
+  nav.tabs{display:flex; max-width:820px; margin:0 auto; position:sticky; top:0; z-index:20;
+    background:var(--fairway-dark); border-top:2px solid rgba(244,239,225,0.18);
+    border-bottom:2px solid rgba(244,239,225,0.18); box-shadow:0 2px 8px rgba(0,0,0,0.45); overflow-x:auto;}
+  nav.tabs button{flex:1; min-width:72px; background:none; border:none; color:var(--cream-dim);
+    font-family:'Oswald',sans-serif; font-size:14px; letter-spacing:1px; text-transform:uppercase;
+    padding:16px 6px; cursor:pointer; border-bottom:3px solid transparent;}
+  nav.tabs button.active{color:var(--gold); border-bottom-color:var(--gold);}
+  nav.tabs button:focus-visible{outline:2px solid var(--gold); outline-offset:-2px;}
+  nav.tabs button[hidden]{display:none;}
+
+  main{max-width:820px; margin:0 auto; padding:20px 16px;}
+  main > section{display:none;}
+  main > section.active{display:block;}
+
+  .card{background:var(--fairway); border:1px solid rgba(244,239,225,0.15); border-radius:8px;
+    padding:18px 16px; margin-bottom:14px;}
+  .card h3{font-size:16px; text-transform:uppercase; letter-spacing:1.5px; color:var(--gold); margin:0 0 14px; font-weight:600;}
+  .section-title{font-size:15px; text-transform:uppercase; letter-spacing:2px; color:var(--gold);
+    border-bottom:1px solid rgba(244,239,225,0.15); padding-bottom:8px; margin:24px 0 14px; font-weight:600;}
+  .kv-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:14px 18px; margin-bottom:14px;}
+  .kv .k{font-family:'Space Mono',monospace; font-size:10px; color:var(--gold); text-transform:uppercase; letter-spacing:1px;}
+  .kv .v{font-size:17px; margin-top:2px;}
+  .kv .v small{display:block; font-family:'Space Mono',monospace; font-size:11px; color:var(--cream-dim);}
+  .muted{color:var(--cream-dim);} .small{font-size:12px;}
+  .body-text{font-family:'Space Mono',monospace; font-size:12px; line-height:1.7; color:var(--cream);}
+
+  .spots{margin:16px 0;}
+  .spots-bar{height:10px; border-radius:5px; background:rgba(244,239,225,0.15); overflow:hidden;}
+  .spots-bar div{height:100%; background:var(--gold);}
+  .spots-label{font-family:'Space Mono',monospace; font-size:11px; color:var(--cream-dim); margin-top:6px;}
+
+  .btn{font-family:'Oswald',sans-serif; font-size:14px; text-transform:uppercase; letter-spacing:1px;
+    padding:11px 20px; border-radius:4px; cursor:pointer; border:1px solid var(--line);
+    background:rgba(255,255,255,0.08); color:var(--cream);}
+  .btn:hover{border-color:var(--gold);}
+  .btn.primary{background:var(--gold); color:var(--ink); font-weight:700; border-color:var(--gold);}
+  .btn.full{width:100%;}
+  .btn.sm{font-size:11px; padding:6px 10px;}
+  .btn.danger{border-color:var(--danger); color:var(--danger);}
+  .btn:disabled{opacity:0.45; cursor:not-allowed;}
+  .btn-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+
+  .field{margin-bottom:14px;}
+  .field > label{display:block; font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:var(--gold);
+    text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;}
+  .field .hint{font-family:'Space Mono',monospace; font-size:10px; color:var(--cream-dim); margin-top:5px; line-height:1.5;}
+  input, select, textarea{width:100%; background:rgba(255,255,255,0.1); border:1px solid var(--line); border-radius:4px;
+    color:var(--cream); font-family:'Space Mono',monospace; font-size:14px; padding:10px 12px;}
+  input:focus, select:focus, textarea:focus{outline:none; border-color:var(--gold);}
+  select option{background:var(--fairway-dark);}
+  textarea{min-height:120px; resize:vertical;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:0 12px;}
+  .check{display:flex; gap:10px; align-items:flex-start; font-family:'Space Mono',monospace; font-size:12px; cursor:pointer; line-height:1.5;}
+  .check input{width:18px; height:18px; flex-shrink:0; margin-top:1px; accent-color:var(--gold);}
+  .pin-input{font-size:22px; letter-spacing:8px; text-align:center; font-weight:700;}
+
+  .terms{background:rgba(0,0,0,0.2); border-left:3px solid var(--gold); border-radius:0 6px 6px 0; padding:12px 14px; margin:18px 0 14px;}
+  .terms-title{font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:1px;}
+  .terms ul{padding-left:18px; margin:8px 0 12px; font-family:'Space Mono',monospace; font-size:11px; line-height:1.7;}
+
+  .notice{font-family:'Space Mono',monospace; font-size:11px; color:var(--warn); background:rgba(203,161,53,0.12);
+    border-left:3px solid var(--warn); padding:10px 12px; border-radius:0 4px 4px 0; margin-bottom:14px; line-height:1.6;}
+  .error{color:var(--danger); font-family:'Space Mono',monospace; font-size:12px; margin:8px 0; min-height:1em;}
+  .empty, .loading{text-align:center; padding:36px 16px; color:var(--cream-dim); font-family:'Space Mono',monospace; font-size:12px;}
+
+  .update{background:var(--fairway); border:1px solid rgba(244,239,225,0.15); border-radius:8px; padding:14px 16px; margin-bottom:12px;}
+  .update.pinned{border-color:var(--gold);}
+  .update-head{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:6px;}
+  .chip{font-family:'Space Mono',monospace; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+    padding:2px 7px; border-radius:3px; background:rgba(203,161,53,0.2); color:var(--gold); border:1px solid rgba(203,161,53,0.5);}
+  .chip.pin{background:var(--gold); color:var(--ink);}
+  .update-date{font-family:'Space Mono',monospace; font-size:10px; color:var(--cream-dim); margin-left:auto;}
+  .update-title{font-size:18px; font-weight:600; margin:2px 0 6px;}
+  .update-body{font-family:'Space Mono',monospace; font-size:12px; line-height:1.7; color:var(--cream); word-wrap:break-word;}
+  .update-body a{color:var(--gold);}
+
+  .status{display:inline-block; padding:4px 10px; border-radius:4px; font-family:'Space Mono',monospace; font-size:11px;
+    text-transform:uppercase; letter-spacing:1px; font-weight:700;}
+  .status.Pending{background:var(--warn); color:var(--ink);}
+  .status.Confirmed{background:var(--ok); color:var(--ink);}
+  .status.Waitlist{background:var(--chud-dim); color:var(--ink);}
+  .status.Withdrawn{background:#777; color:#fff;}
+
+  .paybox{background:var(--cream); color:var(--ink); border-radius:8px; padding:16px; margin-top:14px;}
+  .paybox .pb-title{font-size:16px; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:10px;}
+  .pb-row{display:flex; justify-content:space-between; gap:12px; font-family:'Space Mono',monospace; font-size:12px;
+    padding:6px 0; border-bottom:1px solid var(--line);}
+  .pb-row b{text-align:right; word-break:break-all;}
+  .pb-ref-label{font-family:'Space Mono',monospace; font-size:11px; margin-top:14px; font-weight:700;}
+  .refcode{font-family:'Space Mono',monospace; font-size:28px; font-weight:700; letter-spacing:3px; margin:4px 0 8px;}
+  .paybox .btn{color:var(--ink); border-color:var(--ink-soft); background:transparent;}
+  .pb-note{font-family:'Space Mono',monospace; font-size:10px; color:var(--ink-soft); line-height:1.6; margin:10px 0 0;}
+  .big-ok{font-size:30px; font-weight:700; color:var(--ok); text-transform:uppercase; letter-spacing:2px; margin:6px 0;}
+
+  .player-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px;}
+  .player-chip{background:var(--fairway); border:1px solid rgba(244,239,225,0.15); border-radius:6px; padding:10px 12px; font-size:14px;}
+
+  /* Admin */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:16px;}
+  .stat{background:var(--fairway); border:1px solid rgba(203,161,53,0.3); border-radius:6px; padding:10px 12px; text-align:center;}
+  .stat .sv{font-size:22px; color:var(--gold);}
+  .stat .sl{font-family:'Space Mono',monospace; font-size:9px; color:var(--cream-dim); text-transform:uppercase; margin-top:2px;}
+  .subnav{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;}
+  .subnav button{font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:1px; padding:7px 12px;
+    background:transparent; color:var(--cream-dim); border:1px solid rgba(244,239,225,0.2); border-radius:4px; cursor:pointer;}
+  .subnav button.active{color:var(--ink); background:var(--gold); border-color:var(--gold);}
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .toolbar input, .toolbar select{width:auto; flex:1; min-width:140px; font-size:12px; padding:8px 10px;}
+  .table-wrap{overflow-x:auto; border:1px solid rgba(244,239,225,0.12); border-radius:6px;}
+  main:has(> #admin.active){max-width:1240px;}
+  table.admin{width:100%; min-width:1080px; border-collapse:collapse; font-family:'Space Mono',monospace; font-size:11px;}
+  table.admin td.money{white-space:nowrap;}
+  table.admin select[data-f=Status]{min-width:118px;}
+  table.admin th{background:var(--fairway-dark); color:var(--gold); padding:8px; text-align:left; font-size:9px;
+    text-transform:uppercase; letter-spacing:0.8px; white-space:nowrap; position:sticky; top:0;}
+  table.admin td{padding:8px; border-top:1px solid rgba(244,239,225,0.08); vertical-align:top;}
+  table.admin tr:nth-child(even) td{background:rgba(0,0,0,0.15);}
+  table.admin td .sub{color:var(--cream-dim); font-size:10px; margin-top:2px;}
+  table.admin input, table.admin select{font-size:11px; padding:5px 6px; min-width:70px;}
+  table.admin td.actions{white-space:nowrap;}
+  table.admin td.actions .btn{margin:0 4px 4px 0;}
+  .owing{color:var(--warn);} .paid{color:var(--ok);}
+
+  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--cream); color:var(--ink);
+    font-family:'Space Mono',monospace; font-size:12px; padding:10px 16px; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,0.4);
+    z-index:100; max-width:90vw; opacity:0; transition:opacity .2s; pointer-events:none;}
+  .toast.show{opacity:1;}
+  .toast.err{background:var(--danger);}
+  footer{text-align:center; font-family:'Space Mono',monospace; font-size:10px; color:var(--cream-dim); padding:20px;}
+
+  @media (max-width:480px){
+    nav.tabs button{font-size:11px; padding:14px 6px;}
+    .grid2{grid-template-columns:1fr;}
+    .refcode{font-size:24px;}
+  }
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow" id="hdr-eyebrow">The 4th Annual</div>
+  <h1>Special Players Championship</h1>
+  <div class="subhead" id="hdr-sub">&nbsp;</div>
+</header>
+<div class="demo-banner" id="demo-banner" hidden>Demo mode: not connected to your Google Sheet. Paste your Apps Script URL into API_URL to go live. Admin PIN in demo: 123456</div>
+
+<nav class="tabs">
+  <button data-tab="home" class="active">Home</button>
+  <button data-tab="signup">Sign Up</button>
+  <button data-tab="myspot">My Spot</button>
+  <button data-tab="players">Players</button>
+  <button data-tab="admin" id="admin-tab" hidden>Admin</button>
+</nav>
+
+<main>
+  <section id="home" class="active"></section>
+  <section id="signup"></section>
+  <section id="myspot"></section>
+  <section id="players"></section>
+  <section id="admin"></section>
+</main>
+
+<footer>Questions? Reply to any tournament email.</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════ CONFIG ═══════════════
+// Paste your Apps Script web app URL (ends in /exec). Leave blank to run in demo mode.
+const API_URL = 'https://script.google.com/macros/s/AKfycbyk5z6dVYoD91k0M4NQo6RGeUopijIZI7ETuajggiOSh4CPl0xMYDa2UjtQnYYgxWE/exec';
+const DEMO = !API_URL;
+
+const HANDICAPS = ['+1 or better to 0.0','0.1 to 4.9','5.0 to 9.9','10.0 to 12.9','13.0 to 15.9','16.0 to 19.9','20.0 to 24.9','25.0 to 29.9','Over 30.0'];
+const TEES = ['Front Tees (Red)','White Tees','Blue Tees','Black Tees (Tips)'];
+const STATUSES = ['Pending','Confirmed','Waitlist','Withdrawn'];
+const STATUS_LABEL = { Pending:'Awaiting payment', Confirmed:'Confirmed', Waitlist:'Waitlist', Withdrawn:'Withdrawn' };
+
+// ═══════════════ STATE ═══════════════
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} }
+};
+const state = {
+  tab:'home', pub:null, pubError:null,
+  token: store.get('spc4_token'), me:null,
+  adminToken: null, admin:null, adminTab:'players'
+};
+try{ state.adminToken = sessionStorage.getItem('spc4_admin'); }catch(e){}
+function setAdminToken(t){ state.adminToken = t; try{ t ? sessionStorage.setItem('spc4_admin', t) : sessionStorage.removeItem('spc4_admin'); }catch(e){} }
+
+// ═══════════════ HELPERS ═══════════════
+const $ = s => document.querySelector(s);
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function money(n){ n = Number(n) || 0; return n % 1 ? n.toFixed(2) : String(n); }
+function fmtDate(iso, withTime){
+  if(!iso) return '';
+  const d = new Date(iso); if(isNaN(d)) return iso;
+  const o = { month:'short', day:'numeric', year:'numeric' };
+  if(withTime){ o.hour = 'numeric'; o.minute = '2-digit'; }
+  return d.toLocaleString('en-CA', o);
+}
+function linkify(escaped){ return escaped.replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`); }
+function loading(){ return '<div class="loading">Loading…</div>'; }
+function field(label, control, hint){ return `<div class="field"><label>${label}</label>${control}${hint ? `<div class="hint">${hint}</div>` : ''}</div>`; }
+function selectHtml(name, opts, value, placeholder){
+  return `<select name="${name}"><option value="">${placeholder || '— Select —'}</option>${opts.map(o => `<option${o === value ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+}
+let toastTimer;
+function toast(msg, isErr){
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = 'toast', 3200);
+}
+
+async function api(action, payload){
+  const body = Object.assign({ action }, payload || {});
+  let d;
+  if(DEMO){
+    await new Promise(r => setTimeout(r, 200));
+    try{ d = Object.assign({ ok:true }, JSON.parse(JSON.stringify(demoApi(body) || {}))); }
+    catch(e){ d = { ok:false, error:e.message, code:e.code }; }
+  } else {
+    let res;
+    try{ res = await fetch(API_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:JSON.stringify(body) }); }
+    catch(e){ throw new Error("Can't reach the server. Check your connection."); }
+    if(!res.ok) throw new Error("Can't reach the server. Check your connection.");
+    d = await res.json();
+  }
+  if(!d.ok){ const err = new Error(d.error || 'Something went wrong.'); err.code = d.code; throw err; }
+  return d;
+}
+
+// ═══════════════ NAV ═══════════════
+function go(tab){
+  state.tab = tab;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('active', s.id === tab));
+  render();
+  window.scrollTo(0, 0);
+}
+function render(){
+  ({ home:renderHome, signup:renderSignup, myspot:renderMySpot, players:renderPlayers, admin:renderAdmin })[state.tab]();
+}
+document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
+
+async function loadPublic(){
+  try{ state.pub = await api('public'); state.pubError = null; }
+  catch(e){ state.pubError = e.message; }
+  if(state.pub){
+    const e = state.pub.event;
+    $('#hdr-sub').textContent = [e.date, e.venue].filter(x => x && x !== 'TBA').join(' · ') || 'Date and venue coming soon';
+  }
+  if(['home','signup','players'].includes(state.tab)) render();
+}
+function pubGuard(el){
+  if(state.pub) return false;
+  el.innerHTML = state.pubError ? `<div class="empty">${esc(state.pubError)}<div class="btn-row" style="justify-content:center"><button class="btn sm" data-act="reloadPublic">Try again</button></div></div>` : loading();
+  return true;
+}
+
+// ═══════════════ HOME ═══════════════
+function renderHome(){
+  const el = $('#home');
+  if(pubGuard(el)) return;
+  const { event:e, spots:sp, updates } = state.pub;
+  const left = Math.max(0, sp.capacity - sp.taken);
+  const pct = Math.min(100, sp.capacity ? sp.taken / sp.capacity * 100 : 0);
+  const kv = (k, v, sub) => `<div class="kv"><div class="k">${k}</div><div class="v">${esc(v || 'TBA')}${sub ? `<small>${esc(sub)}</small>` : ''}</div></div>`;
+  const cta = !e.registrationOpen ? '<button class="btn full" disabled>Registration closed</button>'
+            : state.token ? '<button class="btn full" data-act="go" data-tab="myspot">View my spot</button>'
+            : `<button class="btn primary full" data-act="go" data-tab="signup">${left > 0 ? 'Sign up' : 'Join the waitlist'}</button>`;
+  el.innerHTML = `
+    <div class="card">
+      <div class="kv-grid">
+        ${kv('Date', e.date)}${kv('First tee', e.firstTee)}${kv('Venue', e.venue, e.venueAddress)}
+        ${kv('Fee', e.fee ? '$' + money(e.fee) : 'TBA')}${kv('Payment deadline', e.paymentDeadline)}
+      </div>
+      ${e.feeIncludes ? `<div class="body-text muted">Fee includes: ${esc(e.feeIncludes)}</div>` : ''}
+      <div class="spots">
+        <div class="spots-bar"><div style="width:${pct}%"></div></div>
+        <div class="spots-label">${sp.confirmed} confirmed · ${left} of ${sp.capacity} spots left${sp.waitlist ? ` · ${sp.waitlist} on the waitlist` : ''}</div>
+      </div>
+      ${cta}
+    </div>
+    <h2 class="section-title">Updates</h2>
+    ${updates.length ? updates.map(updateCard).join('') : '<div class="empty">No updates yet. Check back soon.</div>'}`;
+}
+function updateCard(u){
+  return `<div class="update${u.pinned ? ' pinned' : ''}">
+    <div class="update-head">${u.pinned ? '<span class="chip pin">Pinned</span>' : ''}<span class="chip">${esc(u.category)}</span><span class="update-date">${esc(fmtDate(u.postedAt))}</span></div>
+    <div class="update-title">${esc(u.title)}</div>
+    <div class="update-body">${linkify(esc(u.body)).replace(/\n/g, '<br>')}</div>
+  </div>`;
+}
+
+// ═══════════════ SIGN UP ═══════════════
+function renderSignup(){
+  const el = $('#signup');
+  if(pubGuard(el)) return;
+  const { event:e, spots:sp } = state.pub;
+  const left = sp.capacity - sp.taken;
+  if(state.token){
+    el.innerHTML = `<div class="card"><h3>You're registered</h3><p class="body-text">You're signed in on this device.</p><button class="btn primary" data-act="go" data-tab="myspot">View my spot</button></div>`;
+    return;
+  }
+  if(!e.registrationOpen){
+    el.innerHTML = `<div class="card"><h3>Registration is closed</h3><p class="body-text">Watch the Home page for updates.</p></div>`;
+    return;
+  }
+  const deadline = e.paymentDeadline && e.paymentDeadline !== 'TBA' ? e.paymentDeadline : 'the payment deadline';
+  el.innerHTML = `
+    ${left <= 0 ? `<div class="notice">All ${sp.capacity} spots are taken. Signing up now puts you on the waitlist. Don't send payment unless you get an email saying a spot opened.</div>` : ''}
+    <form id="signup-form" class="card" novalidate>
+      <h3>Sign up</h3>
+      <div class="grid2">
+        ${field('First name', '<input name="firstName" autocomplete="given-name" maxlength="40">')}
+        ${field('Last name', '<input name="lastName" autocomplete="family-name" maxlength="40">')}
+      </div>
+      ${field('Email', '<input name="email" type="email" autocomplete="email" maxlength="254">', 'Updates and your payment confirmation go here.')}
+      ${field('Phone number', '<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="4165551234">', 'The last 4 digits become your PIN for checking your spot, entering scores and buying raffles.')}
+      ${field('Preferred playing partner', '<input name="partner" maxlength="80" placeholder="First and last name">', "If teams are unbalanced you may be split up. Please don't sign up without a partner.")}
+      ${field('Who sent you the sign-up link?', '<input name="referredBy" maxlength="80">')}
+      ${field('Current handicap range', selectHtml('handicap', HANDICAPS), "Sandbaggers won't be invited back. Please don't reverse-sandbag either.")}
+      ${field('Tees you normally play', selectHtml('tees', TEES))}
+      ${field('Average score on a par 72 from those tees', '<input name="avgScore" type="number" inputmode="numeric" min="50" max="200">')}
+      ${field('Joining the group dinner after the round?', selectHtml('dinner', ['Yes','No']))}
+      <div class="terms">
+        <div class="terms-title">Terms</div>
+        <ul>
+          <li>I'll be at the course at least 45 minutes before my tee time to check in.</li>
+          <li>I'll pay my $${esc(money(e.fee))} fee by ${esc(deadline)}. My spot is confirmed once payment is received.</li>
+          <li>If I withdraw after ${esc(deadline)}, I'm only refunded if a waitlisted or replacement player takes my spot and pays me back.</li>
+          <li>This is a for-fun tournament. Cheating, sandbagging and foul play won't be tolerated.</li>
+        </ul>
+        <label class="check"><input type="checkbox" name="agree"> I agree to all of the above. Let's go golfing.</label>
+      </div>
+      <div class="error" id="signup-err"></div>
+      <button class="btn primary full" type="submit">${left > 0 ? 'Sign up' : 'Join the waitlist'}</button>
+    </form>`;
+  $('#signup-form').addEventListener('submit', submitSignup);
+}
+async function submitSignup(ev){
+  ev.preventDefault();
+  const f = ev.target, err = $('#signup-err'), btn = f.querySelector('button[type=submit]');
+  const v = n => f.elements[n].value.trim();
+  const data = { firstName:v('firstName'), lastName:v('lastName'), email:v('email'), phone:v('phone'),
+    partner:v('partner'), referredBy:v('referredBy'), handicap:v('handicap'), tees:v('tees'),
+    avgScore:v('avgScore'), dinner:v('dinner'), agree:f.elements.agree.checked };
+  const missing = Object.entries(data).filter(([k, val]) => k !== 'agree' && !val);
+  if(missing.length){ err.textContent = 'Please fill in every field.'; return; }
+  if(!data.agree){ err.textContent = 'Please agree to the terms.'; return; }
+  err.textContent = ''; btn.disabled = true; btn.textContent = 'Signing up…';
+  try{
+    const res = await api('register', data);
+    state.token = res.token; store.set('spc4_token', res.token); state.me = res.me;
+    toast(res.me.status === 'Waitlist' ? "You're on the waitlist." : "You're signed up! Check your email.");
+    loadPublic();
+    go('myspot');
+  }catch(e){
+    err.textContent = e.message; btn.disabled = false; btn.textContent = 'Sign up';
+  }
+}
+
+// ═══════════════ MY SPOT ═══════════════
+async function renderMySpot(){
+  const el = $('#myspot');
+  if(!state.token){
+    el.innerHTML = `
+      <form id="login-form" class="card" novalidate>
+        <h3>Check my spot</h3>
+        ${field('Email', '<input name="email" type="email" autocomplete="email">')}
+        ${field('PIN', '<input name="pin" class="pin-input" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">', 'The last 4 digits of the phone number you signed up with.')}
+        <div class="error" id="login-err"></div>
+        <button class="btn primary full" type="submit">Sign in</button>
+        <p class="body-text muted small" style="margin:14px 0 0">Not registered yet? <a href="#" data-act="go" data-tab="signup" style="color:var(--gold)">Sign up</a>.</p>
+      </form>`;
+    $('#login-form').addEventListener('submit', submitLogin);
+    return;
+  }
+  if(!state.me){
+    el.innerHTML = loading();
+    try{ state.me = (await api('me', { token:state.token })).me; }
+    catch(e){
+      if(e.code === 'auth'){ signOut(true); return; }
+      el.innerHTML = `<div class="empty">${esc(e.message)}<div class="btn-row" style="justify-content:center"><button class="btn sm" data-act="refreshMe">Try again</button></div></div>`;
+      return;
+    }
+    if(state.tab !== 'myspot') return;
+  }
+  el.innerHTML = mySpotHtml(state.me);
+}
+function mySpotHtml(m){
+  let main = '';
+  if(m.status === 'Pending'){
+    main = `
+      <p class="body-text">Your spot is held. It's confirmed once your payment arrives.</p>
+      <div class="paybox">
+        <div class="pb-title">Send your e-transfer</div>
+        <div class="pb-row"><span>Amount</span><b>$${money(m.balance)}</b></div>
+        <div class="pb-row"><span>Send to</span><b>${esc(m.payment.email || 'Coming soon')}</b></div>
+        <div class="pb-row"><span>Deadline</span><b>${esc(m.payment.deadline || 'TBA')}</b></div>
+        ${m.amountPaid > 0 ? `<div class="pb-row"><span>Received so far</span><b>$${money(m.amountPaid)}</b></div>` : ''}
+        <div class="pb-ref-label">Put this code in the e-transfer message</div>
+        <div class="refcode">${esc(m.refCode)}</div>
+        <button class="btn sm" data-act="copy" data-text="${esc(m.refCode)}">Copy code</button>
+        <p class="pb-note">This code is how your payment is matched to your sign-up. Payments are checked automatically every 10 minutes, and you'll get an email when your spot is confirmed.</p>
+      </div>`;
+  } else if(m.status === 'Confirmed'){
+    main = `<div class="big-ok">You're in!</div>
+      <p class="body-text">Payment of $${money(m.amountPaid)} received. See you on the course.</p>
+      ${m.team || m.teeId ? `<div class="kv-grid" style="margin-top:12px">
+        ${m.team ? `<div class="kv"><div class="k">Team</div><div class="v">${esc(m.team)}</div></div>` : ''}
+        ${m.teeId ? `<div class="kv"><div class="k">Tee time</div><div class="v">#${esc(m.teeId)}</div></div>` : ''}
+      </div>` : '<p class="body-text muted">Teams and tee times will be posted on the Home page.</p>'}`;
+  } else if(m.status === 'Waitlist'){
+    main = `<p class="body-text">All spots are currently taken. You're on the waitlist, and we'll email you if a spot opens. <b>Please don't send payment yet.</b></p>
+      ${m.amountPaid > 0 ? `<p class="body-text muted">We've received $${money(m.amountPaid)} from you. The organizer will follow up.</p>` : ''}`;
+  }
+  return `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <h3 style="margin:0">${esc(m.firstName)} ${esc(m.lastName)}</h3>
+        <span class="status ${esc(m.status)}">${esc(STATUS_LABEL[m.status] || m.status)}</span>
+      </div>
+      ${main}
+    </div>
+    <div class="card">
+      <h3>My sign-up</h3>
+      <div class="kv-grid">
+        <div class="kv"><div class="k">Email</div><div class="v small mono">${esc(m.email)}</div></div>
+        <div class="kv"><div class="k">Playing partner</div><div class="v">${esc(m.partner)}</div></div>
+        <div class="kv"><div class="k">Dinner</div><div class="v">${esc(m.dinner)}</div></div>
+        <div class="kv"><div class="k">Signed up</div><div class="v">${esc(fmtDate(m.registeredAt))}</div></div>
+      </div>
+      <p class="body-text muted small">Need to change something or withdraw? Reply to your sign-up email.</p>
+      <div class="btn-row"><button class="btn sm" data-act="refreshMe">Refresh</button><button class="btn sm" data-act="signOut">Sign out</button></div>
+    </div>`;
+}
+async function submitLogin(ev){
+  ev.preventDefault();
+  const f = ev.target, err = $('#login-err'), btn = f.querySelector('button');
+  btn.disabled = true; err.textContent = '';
+  try{
+    const res = await api('login', { email:f.elements.email.value.trim(), pin:f.elements.pin.value.trim() });
+    state.token = res.token; store.set('spc4_token', res.token); state.me = res.me;
+    renderMySpot(); renderHomeIfVisible();
+  }catch(e){ err.textContent = e.message; btn.disabled = false; }
+}
+function signOut(expired){
+  state.token = null; state.me = null; store.set('spc4_token', null);
+  if(expired) toast('Your sign-in expired. Please sign in again.');
+  render();
+}
+function renderHomeIfVisible(){ if(state.tab === 'home') renderHome(); }
+
+// ═══════════════ PLAYERS ═══════════════
+function renderPlayers(){
+  const el = $('#players');
+  if(pubGuard(el)) return;
+  const list = state.pub.players;
+  if(list === null){ el.innerHTML = '<div class="empty">The player list will be posted closer to the event.</div>'; return; }
+  if(!list.length){ el.innerHTML = '<div class="empty">No confirmed players yet. Be the first!</div>'; return; }
+  const byTeam = {};
+  list.forEach(p => { const t = p.team || ''; (byTeam[t] = byTeam[t] || []).push(p); });
+  const teams = Object.keys(byTeam).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b));
+  el.innerHTML = teams.map(t => `
+    <h2 class="section-title">${t ? 'Team ' + esc(t) : (teams.length > 1 ? 'Team to be announced' : 'Confirmed players')} · ${byTeam[t].length}</h2>
+    <div class="player-list">${byTeam[t].sort((a, b) => a.name.localeCompare(b.name)).map(p => `<div class="player-chip">${esc(p.name)}</div>`).join('')}</div>`).join('');
+}
+
+// ═══════════════ ADMIN ═══════════════
+async function renderAdmin(){
+  const el = $('#admin');
+  if(!state.adminToken){
+    el.innerHTML = `
+      <form id="admin-login" class="card" style="max-width:360px;margin:30px auto" novalidate>
+        <h3>Organizer sign-in</h3>
+        ${field('Admin PIN', '<input name="pin" class="pin-input" type="password" inputmode="numeric" autocomplete="off">')}
+        <div class="error" id="admin-err"></div>
+        <button class="btn primary full" type="submit">Unlock</button>
+      </form>`;
+    $('#admin-login').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const btn = ev.target.querySelector('button'); btn.disabled = true;
+      try{ setAdminToken((await api('adminLogin', { pin:ev.target.elements.pin.value.trim() })).token); renderAdmin(); }
+      catch(e){ $('#admin-err').textContent = e.message; btn.disabled = false; }
+    });
+    return;
+  }
+  if(!state.admin){
+    el.innerHTML = loading();
+    try{ state.admin = await api('adminData', { token:state.adminToken }); }
+    catch(e){
+      if(e.code === 'auth'){ setAdminToken(null); renderAdmin(); return; }
+      el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return;
+    }
+    if(state.tab !== 'admin') return;
+  }
+  const a = state.admin, s = a.stats;
+  const tabs = [['players','Players'],['payments','Payments'],['updates','Updates'],['settings','Settings']];
+  const body = { players:adminPlayersHtml, payments:adminPaymentsHtml, updates:adminUpdatesHtml, settings:adminSettingsHtml }[state.adminTab]();
+  el.innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="sv">${s.confirmed}/${s.capacity}</div><div class="sl">Confirmed</div></div>
+      <div class="stat"><div class="sv">${s.pending}</div><div class="sl">Awaiting payment</div></div>
+      <div class="stat"><div class="sv">${s.waitlist}</div><div class="sl">Waitlist</div></div>
+      <div class="stat"><div class="sv">$${money(s.collected)}</div><div class="sl">Collected</div></div>
+      <div class="stat"><div class="sv">$${money(s.outstanding)}</div><div class="sl">Outstanding</div></div>
+    </div>
+    <div class="subnav">
+      ${tabs.map(([k, l]) => `<button data-act="adminTab" data-tab="${k}" class="${state.adminTab === k ? 'active' : ''}">${l}</button>`).join('')}
+      <button data-act="adminRefresh" style="margin-left:auto">↺ Refresh</button>
+      <button data-act="adminLock">Lock</button>
+    </div>
+    ${body}`;
+  bindAdmin();
+}
+async function adminCall(action, payload, okMsg){
+  try{
+    const res = await api(action, Object.assign({ token:state.adminToken }, payload));
+    if(okMsg) toast(typeof okMsg === 'function' ? okMsg(res) : okMsg);
+    state.admin = null; await renderAdmin(); loadPublic();
+    return res;
+  }catch(e){
+    if(e.code === 'auth'){ setAdminToken(null); state.admin = null; renderAdmin(); }
+    toast(e.message, true);
+  }
+}
+
+function adminPlayersHtml(){
+  const players = state.admin.players.slice().sort((a, b) => String(a.RegisteredAt).localeCompare(String(b.RegisteredAt)));
+  const teams = [...new Set(players.map(p => p.Team).filter(Boolean))];
+  const phone = d => d && d.length === 10 ? `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}` : esc(d);
+  const rows = players.map((p, i) => {
+    const due = Number(p.AmountDue) || 0, paid = Number(p.AmountPaid) || 0;
+    const search = [p.FirstName, p.LastName, p.Email, p.Phone, p.RefCode, p.Partner, p.Team].join(' ').toLowerCase();
+    return `<tr data-id="${esc(p.PlayerId)}" data-status="${esc(p.Status)}" data-search="${esc(search)}">
+      <td>${i + 1}</td>
+      <td><b>${esc(p.FirstName)} ${esc(p.LastName)}</b><div class="sub">${esc(p.Email)}</div><div class="sub">${phone(p.Phone)}</div></td>
+      <td>${esc(p.Partner)}<div class="sub">${esc(p.Handicap)} · ${esc(p.Tees)} · avg ${esc(p.AvgScore)}</div><div class="sub">Dinner: ${esc(p.Dinner)} · via ${esc(p.ReferredBy)}</div></td>
+      <td>${esc(p.RefCode)}</td>
+      <td><select data-f="Status">${STATUSES.map(st => `<option${st === p.Status ? ' selected' : ''}>${st}</option>`).join('')}</select></td>
+      <td class="money ${paid >= due && due > 0 ? 'paid' : 'owing'}">$${money(paid)} / $${money(due)}</td>
+      <td><input data-f="Team" list="team-list" value="${esc(p.Team)}" style="width:90px"></td>
+      <td><input data-f="TeeId" value="${esc(p.TeeId)}" style="width:50px"></td>
+      <td><input data-f="AdminNotes" value="${esc(p.AdminNotes)}" style="width:150px"></td>
+      <td class="actions">
+        <button class="btn sm" data-act="savePlayer">Save</button>
+        ${paid < due && p.Status !== 'Withdrawn' ? '<button class="btn sm" data-act="markPaid">Mark paid</button>' : ''}
+        ${p.Status === 'Waitlist' ? '<button class="btn sm" data-act="promote">Give spot</button>' : ''}
+      </td></tr>`;
+  }).join('');
+  return `
+    <div class="toolbar">
+      <input id="pl-search" placeholder="Search name, email, phone, code…">
+      <select id="pl-filter"><option value="">All statuses</option>${STATUSES.map(s => `<option>${s}</option>`).join('')}</select>
+      <button class="btn sm" data-act="copyEmails">Copy emails</button>
+    </div>
+    <datalist id="team-list">${teams.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
+    ${players.length ? `<div class="table-wrap"><table class="admin">
+      <thead><tr><th>#</th><th>Player</th><th>Partner / Golf</th><th>Code</th><th>Status</th><th>Paid</th><th>Team</th><th>Tee</th><th>Notes</th><th></th></tr></thead>
+      <tbody id="pl-body">${rows}</tbody></table></div>` : '<div class="empty">No sign-ups yet.</div>'}
+    <p class="body-text muted small">"Give spot" moves a waitlisted player up and emails them payment instructions. Withdrawing someone frees their spot.</p>`;
+}
+function adminPaymentsHtml(){
+  const { payments, players } = state.admin;
+  const options = players.filter(p => p.Status !== 'Withdrawn')
+    .sort((a, b) => a.FirstName.localeCompare(b.FirstName))
+    .map(p => `<option value="${esc(p.PlayerId)}">${esc(p.FirstName)} ${esc(p.LastName)} (${esc(p.RefCode)})</option>`).join('');
+  const byId = {}; players.forEach(p => byId[p.PlayerId] = p);
+  const rows = payments.map(r => {
+    const p = byId[r.PlayerId];
+    const unmatched = !r.PlayerId;
+    return `<tr data-msg="${esc(r.MessageId)}">
+      <td>${esc(fmtDate(r.ReceivedAt, true))}</td>
+      <td>${esc(r.Subject)}</td>
+      <td>${r.Amount ? '$' + money(r.Amount) : '—'}</td>
+      <td>${esc(r.RefCode) || '—'}</td>
+      <td>${p ? esc(p.FirstName + ' ' + p.LastName) : '—'}<div class="sub">${esc(r.Result)}</div></td>
+      <td class="actions">${unmatched && r.Amount ? `<select data-f="assign"><option value="">Assign to…</option>${options}</select> <button class="btn sm" data-act="assignPayment">Assign</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <div class="toolbar"><button class="btn sm primary" data-act="checkPayments">Check inbox now</button>
+      <span class="body-text muted small" style="align-self:center">Runs on its own every 10 minutes.</span></div>
+    ${payments.length ? `<div class="table-wrap"><table class="admin">
+      <thead><tr><th>Received</th><th>Email</th><th>Amount</th><th>Code</th><th>Player / Result</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>` : '<div class="empty">No e-transfers received yet.</div>'}
+    <p class="body-text muted small">Unmatched means the sender left out their code or mistyped it. Pick the right player and assign it.</p>`;
+}
+function adminUpdatesHtml(){
+  const { updates, categories, emailQuota } = state.admin;
+  return `
+    <form id="update-form" class="card" novalidate>
+      <h3>Post an update</h3>
+      ${field('Title', '<input name="title" maxlength="120" placeholder="e.g. Teams are set">')}
+      ${field('Category', selectHtml('category', categories, 'General', '— Select —'))}
+      ${field('Message', '<textarea name="body" maxlength="5000"></textarea>', 'Plain text. Links become clickable.')}
+      ${field('Email it to', `<select name="emailTo"><option value="none">Don't email, just post</option><option value="confirmed">Confirmed players</option><option value="all">Everyone signed up (incl. awaiting payment and waitlist)</option></select>`, `Emails left today: ${emailQuota}`)}
+      <label class="check" style="margin-bottom:14px"><input type="checkbox" name="pinned"> Pin to the top</label>
+      <div class="error" id="update-err"></div>
+      <button class="btn primary full" type="submit">Post update</button>
+    </form>
+    <h2 class="section-title">Posted</h2>
+    ${updates.length ? updates.map(u => `<div data-uid="${esc(u.id)}">${updateCard(u)}
+      <div class="btn-row" style="margin:-6px 0 16px">
+        <button class="btn sm" data-act="pinUpdate" data-pinned="${u.pinned ? '0' : '1'}">${u.pinned ? 'Unpin' : 'Pin'}</button>
+        <button class="btn sm danger" data-act="deleteUpdate">Delete</button>
+        ${u.emailedTo ? `<span class="body-text muted small" style="align-self:center">Emailed: ${esc(u.emailedTo)}</span>` : ''}
+      </div></div>`).join('') : '<div class="empty">Nothing posted yet.</div>'}`;
+}
+function adminSettingsHtml(){
+  return `<form id="settings-form" class="card" novalidate>
+    <h3>Event settings</h3>
+    ${state.admin.settings.map(([k, v, n]) => field(esc(k.replace(/_/g, ' ')),
+      `<input name="${esc(k)}" value="${esc(v)}">`, n ? esc(n) : '')).join('')}
+    <button class="btn primary full" type="submit">Save settings</button>
+  </form>`;
+}
+
+function bindAdmin(){
+  const search = $('#pl-search'), filter = $('#pl-filter');
+  if(search){
+    const apply = () => {
+      const q = search.value.trim().toLowerCase(), st = filter.value;
+      document.querySelectorAll('#pl-body tr').forEach(tr => {
+        tr.style.display = (!q || tr.dataset.search.includes(q)) && (!st || tr.dataset.status === st) ? '' : 'none';
+      });
+    };
+    search.addEventListener('input', apply); filter.addEventListener('change', apply);
+  }
+  const uf = $('#update-form');
+  if(uf) uf.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = ev.target, btn = f.querySelector('button[type=submit]');
+    const d = { title:f.elements.title.value.trim(), category:f.elements.category.value, body:f.elements.body.value.trim(),
+                emailTo:f.elements.emailTo.value, pinned:f.elements.pinned.checked };
+    if(!d.title || !d.body || !d.category){ $('#update-err').textContent = 'Add a title, category and message.'; return; }
+    if(d.emailTo !== 'none' && !confirm('Post this and email it now?')) return;
+    btn.disabled = true; btn.textContent = 'Posting…';
+    const res = await adminCall('adminPostUpdate', d, r => r.sent ? `Posted and emailed to ${r.sent} player${r.sent === 1 ? '' : 's'}.` : 'Posted.');
+    if(!res){ btn.disabled = false; btn.textContent = 'Post update'; }
+  });
+  const sf = $('#settings-form');
+  if(sf) sf.addEventListener('submit', ev => {
+    ev.preventDefault();
+    const settings = {};
+    [...ev.target.elements].forEach(el => { if(el.name) settings[el.name] = el.value.trim(); });
+    adminCall('adminSaveSettings', { settings }, 'Settings saved.');
+  });
+}
+
+// ═══════════════ CLICK ACTIONS ═══════════════
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-act]');
+  if(!b) return;
+  const act = b.dataset.act;
+  if(act === 'go'){ ev.preventDefault(); go(b.dataset.tab); return; }
+  if(act === 'reloadPublic'){ state.pubError = null; render(); loadPublic(); return; }
+  if(act === 'copy'){ copyText(b.dataset.text, 'Code copied.'); return; }
+  if(act === 'refreshMe'){ state.me = null; renderMySpot(); return; }
+  if(act === 'signOut'){ signOut(); return; }
+  if(act === 'adminTab'){ state.adminTab = b.dataset.tab; renderAdmin(); return; }
+  if(act === 'adminRefresh'){ state.admin = null; renderAdmin(); return; }
+  if(act === 'adminLock'){ setAdminToken(null); state.admin = null; renderAdmin(); return; }
+  if(act === 'copyEmails'){
+    const st = $('#pl-filter').value;
+    const list = state.admin.players.filter(p => st ? p.Status === st : p.Status !== 'Withdrawn').map(p => p.Email);
+    copyText(list.join(', '), `${list.length} email${list.length === 1 ? '' : 's'} copied.`); return;
+  }
+  if(act === 'checkPayments'){
+    b.disabled = true; b.textContent = 'Checking…';
+    adminCall('adminCheckPayments', {}, r => `Checked ${r.summary.checked}: ${r.summary.matched} matched, ${r.summary.unmatched} unmatched.`);
+    return;
+  }
+  const tr = b.closest('tr');
+  if(act === 'savePlayer' || act === 'markPaid' || act === 'promote'){
+    const id = tr.dataset.id;
+    b.disabled = true;
+    if(act === 'savePlayer'){
+      const changes = {};
+      tr.querySelectorAll('[data-f]').forEach(el => changes[el.dataset.f] = el.value.trim());
+      const p = state.admin.players.find(x => x.PlayerId === id);
+      if(changes.Status === 'Withdrawn' && p.Status !== 'Withdrawn' && !confirm(`Withdraw ${p.FirstName} ${p.LastName}? Their spot opens up.`)){ b.disabled = false; return; }
+      adminCall('adminUpdatePlayer', { playerId:id, changes }, r => r.emailed ? 'Saved. Confirmation emailed.' : 'Saved.');
+    } else if(act === 'markPaid'){
+      const p = state.admin.players.find(x => x.PlayerId === id);
+      if(!confirm(`Mark ${p.FirstName} ${p.LastName} as fully paid? This confirms their spot and emails them.`)){ b.disabled = false; return; }
+      adminCall('adminMarkPaid', { playerId:id }, r => 'Marked paid: ' + r.result);
+    } else {
+      adminCall('adminPromote', { playerId:id }, r => r.emailed ? 'Spot given and player emailed.' : 'Spot given (email failed, let them know).');
+    }
+    return;
+  }
+  if(act === 'assignPayment'){
+    const playerId = tr.querySelector('[data-f=assign]').value;
+    if(!playerId){ toast('Pick a player first.', true); return; }
+    adminCall('adminAssignPayment', { messageId:tr.dataset.msg, playerId }, 'Payment assigned.');
+    return;
+  }
+  const wrap = b.closest('[data-uid]');
+  if(act === 'pinUpdate'){ adminCall('adminPinUpdate', { updateId:wrap.dataset.uid, pinned:b.dataset.pinned === '1' }, 'Updated.'); return; }
+  if(act === 'deleteUpdate'){ if(confirm('Delete this update from the site?')) adminCall('adminDeleteUpdate', { updateId:wrap.dataset.uid }, 'Deleted.'); return; }
+});
+function copyText(text, msg){
+  const done = () => toast(msg);
+  if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback());
+  else fallback();
+  function fallback(){
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ toast('Copy failed. Select and copy manually.', true); }
+    ta.remove();
+  }
+}
+
+// ═══════════════ DEMO BACKEND (used only when API_URL is blank) ═══════════════
+const demoDb = (() => {
+  const now = Date.now(), day = 86400000;
+  const iso = ms => new Date(ms).toISOString();
+  return {
+    settings: [
+      ['EVENT_NAME','The 4th Annual Special Players Championship','Shown on the site and in emails'],
+      ['EVENT_DATE','TBA',''],['FIRST_TEE','TBA',''],['VENUE','TBA',''],['VENUE_ADDRESS','',''],
+      ['FEE','185','Tournament fee in dollars'],['FEE_INCLUDES','Green fees, cart fees, tax, contest prizes',''],
+      ['CAPACITY','40','Spots before new sign-ups go to the waitlist'],['PAYMENT_DEADLINE','TBA',''],
+      ['ETRANSFER_EMAIL','organizer@example.com','Where players send e-transfers. Must be this Gmail account, with autodeposit on'],
+      ['REGISTRATION_OPEN','TRUE','TRUE or FALSE'],['SHOW_PLAYER_LIST','TRUE','TRUE shows confirmed player names on the site'],
+      ['SITE_URL','','Link to the site, included in emails']
+    ],
+    players: [
+      { PlayerId:'d1', RegisteredAt:iso(now - 9*day), FirstName:'Alex', LastName:'Sample', Email:'alex@example.com', Phone:'4165550101', Partner:'Jordan Example', ReferredBy:'Organizer', Handicap:'10.0 to 12.9', Tees:'Blue Tees', AvgScore:'86', Dinner:'Yes', Status:'Confirmed', RefCode:'SPC4-K7QX2', AmountDue:'185', AmountPaid:'185', PaidAt:iso(now - 8*day), Team:'', TeeId:'', AdminNotes:'' },
+      { PlayerId:'d2', RegisteredAt:iso(now - 9*day), FirstName:'Jordan', LastName:'Example', Email:'jordan@example.com', Phone:'6475550102', Partner:'Alex Sample', ReferredBy:'Alex Sample', Handicap:'16.0 to 19.9', Tees:'White Tees', AvgScore:'94', Dinner:'Yes', Status:'Confirmed', RefCode:'SPC4-M3HR8', AmountDue:'185', AmountPaid:'185', PaidAt:iso(now - 7*day), Team:'', TeeId:'', AdminNotes:'' },
+      { PlayerId:'d3', RegisteredAt:iso(now - 3*day), FirstName:'Sam', LastName:'Placeholder', Email:'sam@example.com', Phone:'9055550103', Partner:'Taylor Demo', ReferredBy:'Organizer', Handicap:'20.0 to 24.9', Tees:'White Tees', AvgScore:'101', Dinner:'No', Status:'Pending', RefCode:'SPC4-P9WD4', AmountDue:'185', AmountPaid:'0', PaidAt:'', Team:'', TeeId:'', AdminNotes:'' }
+    ],
+    updates: [
+      { id:'u1', postedAt:iso(now - 10*day), title:'Sign-ups are open', body:'Sign up on this site, then send your e-transfer with your reference code in the message. Your spot is confirmed once payment arrives.', category:'General', pinned:true, emailedTo:'' },
+      { id:'u2', postedAt:iso(now - 2*day), title:'Venue update coming soon', body:"We're finalizing the course. Watch this page for the announcement.", category:'Venue', pinned:false, emailedTo:'' }
+    ],
+    payments: [
+      { ReceivedAt:iso(now - 8*day), MessageId:'m1', Subject:'INTERAC e-Transfer: ALEX SAMPLE sent you money.', Amount:'185', RefCode:'SPC4-K7QX2', PlayerId:'d1', Result:'Confirmed' },
+      { ReceivedAt:iso(now - 7*day), MessageId:'m2', Subject:'INTERAC e-Transfer: JORDAN EXAMPLE sent you money.', Amount:'185', RefCode:'', PlayerId:'d2', Result:'Assigned manually → Confirmed' },
+      { ReceivedAt:iso(now - 1*day), MessageId:'m3', Subject:'INTERAC e-Transfer: T DEMO sent you money.', Amount:'185', RefCode:'', PlayerId:'', Result:'Unmatched: no reference code' }
+    ],
+    sessions: {}
+  };
+})();
+function demoApi(b){
+  const db = demoDb;
+  const S = () => Object.fromEntries(db.settings.map(r => [r[0], r[1]]));
+  const fail = (m, code) => { const e = new Error(m); e.code = code; throw e; };
+  const sess = type => { const s = db.sessions[b.token]; if(!s || s.type !== type) fail('Your sign-in expired. Please sign in again.', 'auth'); return s; };
+  const newTok = data => { const t = Math.random().toString(36).slice(2) + Date.now(); db.sessions[t] = data; return t; };
+  const find = id => db.players.find(p => p.PlayerId === id) || fail('Player not found.');
+  const counts = () => { const c = { Pending:0, Confirmed:0, Waitlist:0, Withdrawn:0 }; db.players.forEach(p => c[p.Status]++); return c; };
+  const sortU = (a, b) => (a.pinned !== b.pinned) ? (a.pinned ? -1 : 1) : String(b.postedAt).localeCompare(String(a.postedAt));
+  const view = p => { const s = S(), due = +p.AmountDue, paid = +p.AmountPaid; return { firstName:p.FirstName, lastName:p.LastName, email:p.Email, partner:p.Partner, dinner:p.Dinner, status:p.Status, refCode:p.RefCode, amountDue:due, amountPaid:paid, balance:Math.max(0, due - paid), team:p.Team, teeId:p.TeeId, registeredAt:p.RegisteredAt, payment:{ email:s.ETRANSFER_EMAIL, deadline:s.PAYMENT_DEADLINE } }; };
+  const pay = (p, amt) => { p.AmountPaid = String(+p.AmountPaid + amt); const up = +p.AmountPaid >= +p.AmountDue; if(up && !p.PaidAt) p.PaidAt = new Date().toISOString(); if(p.Status === 'Pending' && up){ p.Status = 'Confirmed'; return 'Confirmed'; } return p.Status === 'Waitlist' ? 'Paid while on waitlist: review' : (up ? 'Recorded' : 'Partial'); };
+  switch(b.action){
+    case 'public': {
+      const s = S(), c = counts();
+      return { event:{ name:s.EVENT_NAME, date:s.EVENT_DATE, firstTee:s.FIRST_TEE, venue:s.VENUE, venueAddress:s.VENUE_ADDRESS, fee:+s.FEE, feeIncludes:s.FEE_INCLUDES, paymentDeadline:s.PAYMENT_DEADLINE, registrationOpen:s.REGISTRATION_OPEN === 'TRUE' },
+        spots:{ capacity:+s.CAPACITY, taken:c.Pending + c.Confirmed, confirmed:c.Confirmed, waitlist:c.Waitlist },
+        updates:db.updates.slice().sort(sortU),
+        players:s.SHOW_PLAYER_LIST === 'TRUE' ? db.players.filter(p => p.Status === 'Confirmed').map(p => ({ name:p.FirstName + ' ' + p.LastName, team:p.Team, teeId:p.TeeId })) : null };
+    }
+    case 'register': {
+      const s = S(); const phone = String(b.phone).replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '');
+      if(phone.length !== 10) fail('Enter a 10-digit phone number.');
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) fail('Enter a valid email address.');
+      if(db.players.some(p => p.Status !== 'Withdrawn' && p.Email.toLowerCase() === b.email.toLowerCase())) fail('That email is already registered. Use My Spot to check your status.');
+      const c = counts(), A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const p = { PlayerId:'d' + Date.now(), RegisteredAt:new Date().toISOString(), FirstName:b.firstName, LastName:b.lastName, Email:b.email.toLowerCase(), Phone:phone, Partner:b.partner, ReferredBy:b.referredBy, Handicap:b.handicap, Tees:b.tees, AvgScore:b.avgScore, Dinner:b.dinner,
+        Status:(c.Pending + c.Confirmed) < +s.CAPACITY ? 'Pending' : 'Waitlist', RefCode:'SPC4-' + Array.from({ length:5 }, () => A[Math.floor(Math.random() * A.length)]).join(''), AmountDue:s.FEE, AmountPaid:'0', PaidAt:'', Team:'', TeeId:'', AdminNotes:'' };
+      db.players.push(p);
+      return { token:newTok({ type:'player', id:p.PlayerId }), me:view(p) };
+    }
+    case 'login': {
+      const p = db.players.find(x => x.Status !== 'Withdrawn' && x.Email.toLowerCase() === String(b.email).toLowerCase());
+      if(!p || p.Phone.slice(-4) !== String(b.pin)) fail("That email and PIN don't match a registration. (Demo: alex@example.com / 0101)");
+      return { token:newTok({ type:'player', id:p.PlayerId }), me:view(p) };
+    }
+    case 'me': return { me:view(find(sess('player').id)) };
+    case 'adminLogin': if(b.pin !== '123456') fail('Wrong admin PIN.'); return { token:newTok({ type:'admin' }) };
+    case 'adminData': {
+      sess('admin'); const c = counts(), s = S();
+      return { players:db.players, payments:db.payments.slice().reverse(), updates:db.updates.slice().sort(sortU), settings:db.settings, categories:['General','Venue','Tee Times','Teams','Team Colours','Prizes','Payments'], emailQuota:100,
+        stats:{ confirmed:c.Confirmed, pending:c.Pending, waitlist:c.Waitlist, withdrawn:c.Withdrawn, capacity:+s.CAPACITY,
+          collected:db.players.reduce((t, p) => t + +p.AmountPaid, 0),
+          outstanding:db.players.filter(p => p.Status === 'Pending' || p.Status === 'Confirmed').reduce((t, p) => t + Math.max(0, p.AmountDue - p.AmountPaid), 0) } };
+    }
+    case 'adminUpdatePlayer': { sess('admin'); const p = find(b.playerId); Object.assign(p, b.changes); let emailed = false; if(p.Status === 'Pending' && +p.AmountPaid >= +p.AmountDue){ p.Status = 'Confirmed'; emailed = true; } return { emailed }; }
+    case 'adminMarkPaid': { sess('admin'); const p = find(b.playerId); return { result:pay(p, Math.max(0, p.AmountDue - p.AmountPaid)) }; }
+    case 'adminPromote': { sess('admin'); const p = find(b.playerId); p.Status = +p.AmountPaid >= +p.AmountDue ? 'Confirmed' : 'Pending'; return { emailed:true }; }
+    case 'adminPostUpdate': { sess('admin'); const n = b.emailTo === 'none' ? 0 : db.players.filter(p => b.emailTo === 'confirmed' ? p.Status === 'Confirmed' : p.Status !== 'Withdrawn').length;
+      db.updates.push({ id:'u' + Date.now(), postedAt:new Date().toISOString(), title:b.title, body:b.body, category:b.category, pinned:!!b.pinned, emailedTo:n ? b.emailTo + ' (' + n + ')' : '' }); return { sent:n }; }
+    case 'adminPinUpdate': { sess('admin'); const u = db.updates.find(x => x.id === b.updateId); if(u) u.pinned = !!b.pinned; return {}; }
+    case 'adminDeleteUpdate': { sess('admin'); db.updates = db.updates.filter(x => x.id !== b.updateId); return {}; }
+    case 'adminSaveSettings': { sess('admin'); db.settings.forEach(r => { if(r[0] in b.settings) r[1] = b.settings[r[0]]; }); return {}; }
+    case 'adminCheckPayments': sess('admin'); return { summary:{ checked:0, matched:0, unmatched:0 } };
+    case 'adminAssignPayment': { sess('admin'); const r = db.payments.find(x => x.MessageId === b.messageId); const p = find(b.playerId); r.PlayerId = p.PlayerId; r.Result = 'Assigned manually → ' + pay(p, +r.Amount); return {}; }
+  }
+  fail('Unknown action.');
+}
+
+// ═══════════════ INIT ═══════════════
+(function init(){
+  if(DEMO) $('#demo-banner').hidden = false;
+  const showAdmin = () => { const on = location.hash === '#admin'; $('#admin-tab').hidden = !on; if(on) go('admin'); };
+  window.addEventListener('hashchange', showAdmin);
+  showAdmin();
+  render();
+  loadPublic();
+  setInterval(() => { if(state.tab === 'home' && !document.hidden) loadPublic(); }, 60000);
+})();
+</script>
+</body>
+</html>
