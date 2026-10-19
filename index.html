@@ -61,8 +61,19 @@
   .body-text{font-family:'Space Mono',monospace; font-size:12px; line-height:1.7; color:var(--cream);}
 
   .spots{margin:16px 0;}
-  .spots-bar{height:10px; border-radius:5px; background:rgba(244,239,225,0.15); overflow:hidden;}
-  .spots-bar div{height:100%; background:var(--gold);}
+  .spots-bar{height:10px; border-radius:5px; background:rgba(244,239,225,0.15); overflow:hidden; display:flex;}
+  .spots-bar div{height:100%;}
+  .spots-bar .seg-confirmed{background:var(--ok);}
+  .spots-bar .seg-pending{background:var(--warn);}
+  .spots-legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-family:'Space Mono',monospace; font-size:11px; color:var(--cream-dim); margin-top:8px;}
+  .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:-1px;}
+  .dot.Confirmed{background:var(--ok);} .dot.Pending{background:var(--warn);}
+  .dot.Waitlist{background:var(--chud-dim);} .dot.Withdrawn{background:#888;} .dot.Open{background:rgba(244,239,225,0.25);}
+  .player-chip{border-left:3px solid transparent;}
+  .player-chip.Confirmed{border-left-color:var(--ok);} .player-chip.Pending{border-left-color:var(--warn);}
+  .player-chip.Waitlist{border-left-color:var(--chud-dim);} .player-chip.Withdrawn{border-left-color:#888; color:var(--cream-dim);}
+  .player-chip .pos{font-family:'Space Mono',monospace; font-size:11px; color:var(--cream-dim); margin-right:6px;}
+  .team-title{font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:1px; margin:14px 0 8px;}
   .spots-label{font-family:'Space Mono',monospace; font-size:11px; color:var(--cream-dim); margin-top:6px;}
 
   .btn{font-family:'Oswald',sans-serif; font-size:14px; text-transform:uppercase; letter-spacing:1px;
@@ -128,8 +139,8 @@
   .pb-note{font-family:'Space Mono',monospace; font-size:10px; color:var(--ink-soft); line-height:1.6; margin:10px 0 0;}
   .big-ok{font-size:30px; font-weight:700; color:var(--ok); text-transform:uppercase; letter-spacing:2px; margin:6px 0;}
 
-  .player-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px;}
-  .player-chip{background:var(--fairway); border:1px solid rgba(244,239,225,0.15); border-radius:6px; padding:10px 12px; font-size:14px;}
+  .player-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px;}
+  .player-chip{background:var(--fairway); border:1px solid rgba(244,239,225,0.15); border-radius:6px; padding:9px 10px; font-size:14px; min-width:0; overflow-wrap:anywhere;}
 
   /* Admin */
   .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:16px;}
@@ -299,7 +310,8 @@ function renderHome(){
   if(pubGuard(el)) return;
   const { event:e, spots:sp, updates } = state.pub;
   const left = Math.max(0, sp.capacity - sp.taken);
-  const pct = Math.min(100, sp.capacity ? sp.taken / sp.capacity * 100 : 0);
+  const pending = Math.max(0, sp.taken - sp.confirmed);
+  const pctOf = n => Math.min(100, sp.capacity ? n / sp.capacity * 100 : 0);
   const kv = (k, v, sub) => `<div class="kv"><div class="k">${k}</div><div class="v">${esc(v || 'TBA')}${sub ? `<small>${esc(sub)}</small>` : ''}</div></div>`;
   const cta = !e.registrationOpen ? '<button class="btn full" disabled>Registration closed</button>'
             : state.token ? '<button class="btn full" data-act="go" data-tab="myspot">View my spot</button>'
@@ -312,8 +324,13 @@ function renderHome(){
       </div>
       ${e.feeIncludes ? `<div class="body-text muted">Fee includes: ${esc(e.feeIncludes)}</div>` : ''}
       <div class="spots">
-        <div class="spots-bar"><div style="width:${pct}%"></div></div>
-        <div class="spots-label">${sp.confirmed} confirmed · ${left} of ${sp.capacity} spots left${sp.waitlist ? ` · ${sp.waitlist} on the waitlist` : ''}</div>
+        <div class="spots-bar"><div class="seg-confirmed" style="width:${pctOf(sp.confirmed)}%"></div><div class="seg-pending" style="width:${Math.min(pctOf(pending), 100 - pctOf(sp.confirmed))}%"></div></div>
+        <div class="spots-legend">
+          <span><span class="dot Confirmed"></span>${sp.confirmed} confirmed</span>
+          <span><span class="dot Pending"></span>${pending} awaiting payment</span>
+          <span><span class="dot Open"></span>${left} of ${sp.capacity} spots open</span>
+          ${sp.waitlist ? `<span><span class="dot Waitlist"></span>${sp.waitlist} on the waitlist</span>` : ''}
+        </div>
       </div>
       ${cta}
     </div>
@@ -511,13 +528,30 @@ function renderPlayers(){
   if(pubGuard(el)) return;
   const list = state.pub.players;
   if(list === null){ el.innerHTML = '<div class="empty">The player list will be posted closer to the event.</div>'; return; }
-  if(!list.length){ el.innerHTML = '<div class="empty">No confirmed players yet. Be the first!</div>'; return; }
+  if(!list.length){ el.innerHTML = '<div class="empty">No one has signed up yet. Be the first!</div>'; return; }
+  const by = { Confirmed:[], Pending:[], Waitlist:[], Withdrawn:[] };
+  list.forEach(p => { if(by[p.status]) by[p.status].push(p); });   // already in sign-up order
+  const chips = (arr, numbered) => `<div class="player-list">${arr.map((p, i) =>
+    `<div class="player-chip ${esc(p.status)}">${numbered ? `<span class="pos">#${i + 1}</span>` : ''}${esc(p.name)}</div>`).join('')}</div>`;
+  const section = (status, title, body, note) => `
+    <h2 class="section-title"><span class="dot ${status}"></span>${title} · ${by[status].length}</h2>
+    ${note ? `<p class="body-text muted small" style="margin:-6px 0 10px">${note}</p>` : ''}
+    ${by[status].length ? body : '<div class="body-text muted small">No one yet.</div>'}`;
+
+  // Confirmed players are grouped by team once teams are assigned.
   const byTeam = {};
-  list.forEach(p => { const t = p.team || ''; (byTeam[t] = byTeam[t] || []).push(p); });
+  by.Confirmed.forEach(p => { const t = p.team || ''; (byTeam[t] = byTeam[t] || []).push(p); });
   const teams = Object.keys(byTeam).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b));
-  el.innerHTML = teams.map(t => `
-    <h2 class="section-title">${t ? 'Team ' + esc(t) : (teams.length > 1 ? 'Team to be announced' : 'Confirmed players')} · ${byTeam[t].length}</h2>
-    <div class="player-list">${byTeam[t].sort((a, b) => a.name.localeCompare(b.name)).map(p => `<div class="player-chip">${esc(p.name)}</div>`).join('')}</div>`).join('');
+  const sortName = arr => arr.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const confirmedBody = teams.length > 1 || (teams.length === 1 && teams[0])
+    ? teams.map(t => `<div class="team-title">${t ? 'Team ' + esc(t) : 'Team to be announced'} · ${byTeam[t].length}</div>${chips(sortName(byTeam[t]))}`).join('')
+    : chips(sortName(by.Confirmed));
+
+  el.innerHTML =
+    section('Confirmed', 'Confirmed', confirmedBody) +
+    section('Pending', 'Awaiting payment', chips(by.Pending), 'Spot held. Confirmed once payment arrives.') +
+    section('Waitlist', 'Waitlist', chips(by.Waitlist, true), 'In order. If a spot opens, the next person is emailed.') +
+    (by.Withdrawn.length ? section('Withdrawn', 'Withdrawn', chips(sortName(by.Withdrawn))) : '');
 }
 
 // ═══════════════ ADMIN ═══════════════
@@ -814,7 +848,7 @@ function demoApi(b){
       return { event:{ name:s.EVENT_NAME, date:s.EVENT_DATE, firstTee:s.FIRST_TEE, venue:s.VENUE, venueAddress:s.VENUE_ADDRESS, fee:+s.FEE, feeIncludes:s.FEE_INCLUDES, paymentDeadline:s.PAYMENT_DEADLINE, registrationOpen:s.REGISTRATION_OPEN === 'TRUE' },
         spots:{ capacity:+s.CAPACITY, taken:c.Pending + c.Confirmed, confirmed:c.Confirmed, waitlist:c.Waitlist },
         updates:db.updates.slice().sort(sortU),
-        players:s.SHOW_PLAYER_LIST === 'TRUE' ? db.players.filter(p => p.Status === 'Confirmed').map(p => ({ name:p.FirstName + ' ' + p.LastName, team:p.Team, teeId:p.TeeId })) : null };
+        players:s.SHOW_PLAYER_LIST === 'TRUE' ? db.players.slice().sort((a, b) => String(a.RegisteredAt).localeCompare(String(b.RegisteredAt))).map(p => ({ name:p.FirstName + ' ' + p.LastName, status:p.Status, team:p.Status === 'Confirmed' ? p.Team : '', teeId:p.Status === 'Confirmed' ? p.TeeId : '' })) : null };
     }
     case 'register': {
       const s = S(); const phone = String(b.phone).replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '');
