@@ -350,9 +350,10 @@ function renderSignup(){
         ${field('Last name', '<input name="lastName" autocomplete="family-name" maxlength="40">')}
       </div>
       ${field('Email', '<input name="email" type="email" autocomplete="email" maxlength="254">', 'Updates and your payment confirmation go here.')}
-      ${field('Phone number', '<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="4165551234">', 'The last 4 digits become your PIN for checking your spot, entering scores and buying raffles.')}
+      ${field('Phone number', '<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="14" placeholder="(416)-555-1234">', 'Format: (xxx)-xxx-xxxx. Just type the 10 digits and it formats itself. The last 4 digits become your PIN for checking your spot, entering scores and buying raffles.')}
       ${field('Preferred playing partner', '<input name="partner" maxlength="80" placeholder="First and last name">', "If teams are unbalanced you may be split up. Please don't sign up without a partner.")}
-      ${field('Who sent you the sign-up link?', '<input name="referredBy" maxlength="80">')}
+      ${field('Who sent you the sign-up link?', selectHtml('referredChoice', ['Brandon Nhan','Other']) +
+        '<input name="referredOther" maxlength="80" placeholder="First and last name" style="margin-top:8px" hidden>')}
       ${field('Current handicap range', selectHtml('handicap', HANDICAPS), "Sandbaggers won't be invited back. Please don't reverse-sandbag either.")}
       ${field('Tees you normally play', selectHtml('tees', TEES))}
       ${field('Average score on a par 72 from those tees', '<input name="avgScore" type="number" inputmode="numeric" min="50" max="200">')}
@@ -370,17 +371,33 @@ function renderSignup(){
       <div class="error" id="signup-err"></div>
       <button class="btn primary full" type="submit">${left > 0 ? 'Sign up' : 'Join the waitlist'}</button>
     </form>`;
-  $('#signup-form').addEventListener('submit', submitSignup);
+  const sf = $('#signup-form');
+  sf.addEventListener('submit', submitSignup);
+  sf.elements.phone.addEventListener('input', ev => { ev.target.value = formatPhone(ev.target.value); });
+  sf.elements.referredChoice.addEventListener('change', ev => {
+    const other = sf.elements.referredOther, show = ev.target.value === 'Other';
+    other.hidden = !show; if(show) other.focus(); else other.value = '';
+  });
+}
+// Formats as (xxx)-xxx-xxxx while typing. Ignores spaces, dashes, brackets and a leading +1.
+function formatPhone(raw){
+  let d = String(raw).replace(/\D/g, '');
+  if(d[0] === '1') d = d.slice(1); // area codes never start with 1, so a leading 1 is the country code
+  d = d.slice(0, 10);
+  if(d.length < 4) return d.length ? '(' + d : '';
+  if(d.length < 7) return `(${d.slice(0,3)})-${d.slice(3)}`;
+  return `(${d.slice(0,3)})-${d.slice(3,6)}-${d.slice(6)}`;
 }
 async function submitSignup(ev){
   ev.preventDefault();
   const f = ev.target, err = $('#signup-err'), btn = f.querySelector('button[type=submit]');
   const v = n => f.elements[n].value.trim();
   const data = { firstName:v('firstName'), lastName:v('lastName'), email:v('email'), phone:v('phone'),
-    partner:v('partner'), referredBy:v('referredBy'), handicap:v('handicap'), tees:v('tees'),
+    partner:v('partner'), referredBy:v('referredChoice') === 'Other' ? v('referredOther') : v('referredChoice'), handicap:v('handicap'), tees:v('tees'),
     avgScore:v('avgScore'), dinner:v('dinner'), agree:f.elements.agree.checked };
   const missing = Object.entries(data).filter(([k, val]) => k !== 'agree' && !val);
   if(missing.length){ err.textContent = 'Please fill in every field.'; return; }
+  if(data.phone.replace(/\D/g, '').length !== 10){ err.textContent = 'Enter your phone number as (xxx)-xxx-xxxx.'; return; }
   if(!data.agree){ err.textContent = 'Please agree to the terms.'; return; }
   err.textContent = ''; btn.disabled = true; btn.textContent = 'Signing up…';
   try{
@@ -563,7 +580,7 @@ async function adminCall(action, payload, okMsg){
 function adminPlayersHtml(){
   const players = state.admin.players.slice().sort((a, b) => String(a.RegisteredAt).localeCompare(String(b.RegisteredAt)));
   const teams = [...new Set(players.map(p => p.Team).filter(Boolean))];
-  const phone = d => d && d.length === 10 ? `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}` : esc(d);
+  const phone = d => d && d.length === 10 ? formatPhone(d) : esc(d);
   const rows = players.map((p, i) => {
     const due = Number(p.AmountDue) || 0, paid = Number(p.AmountPaid) || 0;
     const search = [p.FirstName, p.LastName, p.Email, p.Phone, p.RefCode, p.Partner, p.Team].join(' ').toLowerCase();
